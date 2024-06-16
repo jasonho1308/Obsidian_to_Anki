@@ -1,11 +1,8 @@
+import { Notice, Plugin, addIcon, TFile, TFolder } from 'obsidian'
 import * as AnkiConnect from './src/anki'
-
-import { Notice, Plugin, addIcon } from 'obsidian'
-import { ParsedSettings, PluginSettings } from './src/interfaces/settings-interface'
-
+import { PluginSettings, ParsedSettings } from './src/interfaces/settings-interface'
+import { DEFAULT_IGNORED_FILE_GLOBS, SettingsTab } from './src/settings'
 import { ANKI_ICON } from './src/constants'
-import { FileManager } from './src/files-manager'
-import { SettingsTab } from './src/settings'
 import { settingToData } from './src/setting-to-data'
 
 export default class MyPlugin extends Plugin {
@@ -35,6 +32,7 @@ export default class MyPlugin extends Plugin {
 			},
 			Defaults: {
 				"Folder as Deck": true,
+				"Scan Directory": "",
 				"Tag": "Obsidian_to_Anki",
 				"Deck": "Default",
 				"Scheduling Interval": 0,
@@ -44,7 +42,6 @@ export default class MyPlugin extends Plugin {
 				"CurlyCloze - Highlights to Clozes": false,
 				"ID Comments": true,
 				"Add Obsidian Tags": false,
-				"Add File Tags to Card": false,
 			}
 		}
 		/*Making settings from scratch, so need note types*/
@@ -53,8 +50,8 @@ export default class MyPlugin extends Plugin {
 		for (let note_type of this.note_types) {
 			settings["CUSTOM_REGEXPS"][note_type] = ""
 			const field_names: string[] = await AnkiConnect.invoke(
-	            'modelFieldNames', {modelName: note_type}
-	        ) as string[]
+				'modelFieldNames', {modelName: note_type}
+			) as string[]
 			this.fields_dict[note_type] = field_names
 			settings["FILE_LINK_FIELDS"][note_type] = field_names[0]
 		}
@@ -159,6 +156,32 @@ export default class MyPlugin extends Plugin {
 		}
 	}
 
+	/**
+	 * Recursively traverse a TFolder and return all TFiles.
+	 * @param tfolder - The TFolder to start the traversal from.
+	 * @returns An array of TFiles found within the folder and its subfolders.
+	 */
+	getAllTFilesInFolder(tfolder) {
+		const allTFiles = [];
+		// Check if the provided object is a TFolder
+		if (!(tfolder instanceof TFolder)) {
+			return allTFiles;
+		}
+		// Iterate through the contents of the folder
+		tfolder.children.forEach((child) => {
+			// If it's a TFile, add it to the result
+			if (child instanceof TFile) {
+				allTFiles.push(child);
+			} else if (child instanceof TFolder) {
+				// If it's a TFolder, recursively call the function on it
+				const filesInSubfolder = this.getAllTFilesInFolder(child);
+				allTFiles.push(...filesInSubfolder);
+			}
+			// Ignore other types of files or objects
+		});
+		return allTFiles;
+	}
+
 	async scanVault() {
 		new Notice('Scanning vault, check console for details...');
 		console.info("Checking connection to Anki...")
@@ -171,7 +194,22 @@ export default class MyPlugin extends Plugin {
 		}
 		new Notice("Successfully connected to Anki! This could take a few minutes - please don't close Anki until the plugin is finished")
 		const data: ParsedSettings = await settingToData(this.app, this.settings, this.fields_dict)
-		const manager = new FileManager(this.app, data, this.app.vault.getMarkdownFiles(), this.file_hashes, this.added_media)
+		const scanDir = this.app.vault.getAbstractFileByPath(this.settings.Defaults["Scan Directory"])
+		let manager = null;
+		if (scanDir !== null) {
+			let markdownFiles = [];
+			if (scanDir instanceof TFolder) {
+				console.info("Using custom scan directory: " + scanDir.path)
+				markdownFiles = this.getAllTFilesInFolder(scanDir);
+			} else {
+				new Notice("Error: incorrect path for scan directory " + this.settings.Defaults["Scan Directory"])
+				return
+			}
+			manager = new FileManager(this.app, data, markdownFiles, this.file_hashes, this.added_media)
+		} else {
+			manager = new FileManager(this.app, data, this.app.vault.getMarkdownFiles(), this.file_hashes, this.added_media);
+		}
+		
 		await manager.initialiseFiles()
 		await manager.requests_1()
 		this.added_media = Array.from(manager.added_media_set)

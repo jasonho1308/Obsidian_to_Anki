@@ -3,6 +3,7 @@ import * as AnkiConnect from './anki'
 import { Notice, PluginSettingTab, Setting, TFolder } from 'obsidian'
 
 const defaultDescs = {
+	"Scan Directory": "The directory to scan. Leave empty to scan the entire vault",
 	"Tag": "The tag that the plugin automatically adds to any generated cards.",
 	"Deck": "The deck the plugin adds cards to if TARGET DECK is not specified in the file.",
 	"Scheduling Interval": "The time, in minutes, between automatic scans of the vault. Set this to 0 to disable automatic scanning.",
@@ -14,6 +15,10 @@ const defaultDescs = {
 	"Add Obsidian Tags": "Interpret #tags in the fields of a note as Anki tags, removing them from the note text in Anki.",
 	"Add File Tags to Card": "Add tags in the file to the card"
 }
+
+export const DEFAULT_IGNORED_FILE_GLOBS = [
+	'**/*.excalidraw.md'
+];
 
 export class SettingsTab extends PluginSettingTab {
 
@@ -172,6 +177,10 @@ export class SettingsTab extends PluginSettingTab {
 		const plugin = (this as any).plugin
 		let defaults_settings = containerEl.createEl('h3', {text: 'Defaults'})
 
+		// To account for new scan directory
+		if (!(plugin.settings["Defaults"].hasOwnProperty("Scan Directory"))) {
+			plugin.settings["Defaults"]["Scan Directory"] = ""
+		}
 		// To account for new add context
 		if (!(plugin.settings["Defaults"].hasOwnProperty("Add Context"))) {
 			plugin.settings["Defaults"]["Add Context"] = false
@@ -404,6 +413,35 @@ export class SettingsTab extends PluginSettingTab {
 				}
 			)
 	}
+	setup_ignore_files() {
+		let { containerEl } = this;
+		const plugin = (this as any).plugin
+		let ignored_files_settings = containerEl.createEl('h3', { text: 'Ignored File Settings' })
+		plugin.settings["IGNORED_FILE_GLOBS"] = plugin.settings.hasOwnProperty("IGNORED_FILE_GLOBS") ? plugin.settings["IGNORED_FILE_GLOBS"] : DEFAULT_IGNORED_FILE_GLOBS
+		const descriptionFragment = document.createDocumentFragment();
+		descriptionFragment.createEl("span", { text: "Glob patterns for files to ignore. You can add multiple patterns. One per line. Have a look at the " })
+		descriptionFragment.createEl("a", { text: "README.md", href: "https://github.com/Pseudonium/Obsidian_to_Anki?tab=readme-ov-file#features" });
+		descriptionFragment.createEl("span", { text: " for more information, examples and further resources." })
+
+
+		new Setting(ignored_files_settings)
+			.setName("Patterns to ignore")
+			.setDesc(descriptionFragment)
+			.addTextArea(text => {
+				text.setValue(plugin.settings.IGNORED_FILE_GLOBS.join("\n"))
+					.setPlaceholder("Examples: '**/*.excalidraw.md', 'Templates/**'")
+					.onChange((value) => {
+						let ignoreLines = value.split("\n")
+						ignoreLines = ignoreLines.filter(e => e.trim() != "") //filter out empty lines and blank lines
+						plugin.settings.IGNORED_FILE_GLOBS = ignoreLines
+
+						plugin.saveAllData()
+					}
+					)
+				text.inputEl.rows = 10
+				text.inputEl.cols = 30
+			});
+	}
 
 	setup_display() {
 		let { containerEl } = this
@@ -416,6 +454,7 @@ export class SettingsTab extends PluginSettingTab {
 		this.setup_syntax()
 		this.setup_defaults()
 		this.setup_buttons()
+		this.setup_ignore_files()
 	}
 
 	async display() {

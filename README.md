@@ -10,7 +10,7 @@ Check out the [Wiki](https://github.com/Pseudonium/Obsidian_to_Anki/wiki)! It ha
 
 ### All users
 1. Start up [Anki](https://apps.ankiweb.net/), and navigate to your desired profile.
-2. Ensure that you've installed [AnkiConnect](https://github.com/FooSoft/anki-connect).
+2. Ensure that you've installed [AnkiConnect](https://git.foosoft.net/alex/anki-connect).
 
 ### Obsidian plugin users
 3. Have [Obsidian](https://obsidian.md/) downloaded
@@ -60,6 +60,19 @@ The script needs to be able to:
 
 Current features (check out the wiki for more details):
 * **Custom note types** - You're not limited to the 6 built-in note types of Anki.
+* **Custom scan directory** 
+  * The plugin will scan the entire vault by default
+  * You can also set which directory (includes all sub-directories as well) to scan via plugin settings
+* **Ignore Folders and Files**
+  * You can specify which files and folders to ignore 
+  * This can be done in the settings of this plugin with [Glob syntax](https://en.wikipedia.org/wiki/Glob_(programming)#Syntax).
+  * If you're working on your own globs, you can test them out [here](https://globster.xyz/)
+  * Examples:
+    * `**/*.excalidraw.md` - Ignore all files that end in `.excalidraw.md`
+      * => avoids excalidraw files from being scanned which can be extremely slow
+    * `Template/**` - Ignore all files in the `Template` folder (including subfolders)
+    * `**/private/**` - Ignore all files in folders that are called `private` no matter where they are in the vault
+    * `[Pp]rivate*/**` - Ignore all files and folders in the root of the vault that start with `private` or with `Private`
 * **Updating notes from file** - Your text files are the canonical source of the notes.
 * **Tags**, including **tags for an entire file**.
 * **Adding to user-specified deck** on a *per-file* basis.

@@ -19,6 +19,7 @@ export interface PluginSettings {
 	},
 	Defaults: {
 		"Folder as Deck": boolean,
+		"Scan Directory": string,
 		"Tag": string,
 		"Deck": string,
 		"Scheduling Interval": number
@@ -29,7 +30,8 @@ export interface PluginSettings {
 		"ID Comments": boolean,
 		"Add Obsidian Tags": boolean,
 		"Add File Tags to Card": boolean
-	}
+	},
+	IGNORED_FILE_GLOBS:string[]
 }
 
 export interface FileData {
@@ -59,7 +61,8 @@ export interface FileData {
 }
 
 export interface ParsedSettings extends FileData {
-    add_file_link: boolean
+	add_file_link: boolean
 	folder_decks: Record<string, string>
 	folder_tags: Record<string, string>
+	ignored_file_globs: string[]
 }

@@ -6,7 +6,7 @@ import { FileData, ParsedSettings } from './interfaces/settings-interface'
 
 import { AllFile } from './file'
 import { basename } from 'path'
-
+import multimatch from "multimatch"
 interface addNoteResponse {
     result: number,
     error: string | null
@@ -65,14 +65,23 @@ export class FileManager {
     constructor(app: App, data:ParsedSettings, files: TFile[], file_hashes: Record<string, string>, added_media: string[]) {
         this.app = app
         this.data = data
-        this.files = files
+
+        this.files = this.findFilesThatAreNotIgnored(files, data);
+
         this.ownFiles = []
         this.file_hashes = file_hashes
         this.added_media_set = new Set(added_media)
     }
-
     getUrl(file: TFile): string {
         return "obsidian://open?vault=" + encodeURIComponent(this.data.vault_name) + String.raw`&file=` + encodeURIComponent(file.path)
+    }
+
+    findFilesThatAreNotIgnored(files:TFile[], data:ParsedSettings):TFile[]{
+        let ignoredFiles = []
+        ignoredFiles = multimatch(files.map(file => file.path), data.ignored_file_globs)
+
+        let notIgnoredFiles = files.filter(file => !ignoredFiles.contains(file.path))
+        return notIgnoredFiles;
     }
 
     getFolderPathList(file: TFile): TFolder[] {
@@ -177,6 +186,12 @@ export class FileManager {
     async requests_1() {
         let requests: AnkiConnect.AnkiConnectRequest[] = []
         let temp: AnkiConnect.AnkiConnectRequest[] = []
+        console.info("Requesting addition of new deck into Anki...")
+        for (let file of this.ownFiles) {
+            temp.push(file.getCreateDecks())
+        }
+        requests.push(AnkiConnect.multi(temp))
+        temp = []
         console.info("Requesting addition of notes into Anki...")
         for (let file of this.ownFiles) {
             temp.push(file.getAddNotes())
@@ -227,7 +242,7 @@ export class FileManager {
         }
         requests.push(AnkiConnect.multi(temp))
         temp = []
-        this.requests_1_result = await AnkiConnect.invoke('multi', {actions: requests})
+        this.requests_1_result = ((await AnkiConnect.invoke('multi', {actions: requests}) as Array<Object>).slice(1) as any)
         await this.parse_requests_1()
     }
 
@@ -311,7 +326,10 @@ export class FileManager {
         temp = []
         console.info("Requesting tags to be replaced...")
         for (let file of this.ownFiles) {
-            temp.push(file.getClearTags())
+            let rem = file.getClearTags()
+            if(rem.params.notes.length) {
+                temp.push(rem)
+            }
         }
         requests.push(AnkiConnect.multi(temp))
         temp = []
