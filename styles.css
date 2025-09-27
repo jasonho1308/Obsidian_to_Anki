@@ -17,3 +17,18 @@
 .anki-rotated {
     transform: rotate(-90deg);
 }
+
+.collapsible-item-self {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.collapsible-item-collapse {
+  margin-right: 8px;
+  transition: transform 0.2s ease;
+}
+
+.right-triangle {
+  display: block;
+}

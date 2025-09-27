@@ -4,6 +4,7 @@ import { PluginSettings, ParsedSettings } from './src/interfaces/settings-interf
 import { DEFAULT_IGNORED_FILE_GLOBS, SettingsTab } from './src/settings'
 import { ANKI_ICON } from './src/constants'
 import { settingToData } from './src/setting-to-data'
+import { FileManager } from './src/files-manager'
 
 export default class MyPlugin extends Plugin {
 
@@ -42,7 +43,9 @@ export default class MyPlugin extends Plugin {
 				"CurlyCloze - Highlights to Clozes": false,
 				"ID Comments": true,
 				"Add Obsidian Tags": false,
-			}
+				"Add File Tags to Card": false
+			},
+			IGNORED_FILE_GLOBS: []
 		}
 		/*Making settings from scratch, so need note types*/
 		this.note_types = await AnkiConnect.invoke('modelNames') as Array<string>
