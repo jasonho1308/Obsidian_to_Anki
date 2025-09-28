@@ -155,19 +155,26 @@ export class SettingsTab extends PluginSettingTab {
 		}
 	}
 
-	setup_syntax() {
+	setup_regex_patterns() {
 		let { containerEl } = this;
 		const plugin = (this as any).plugin
-		let syntax_settings = containerEl.createEl('h3', { text: 'Syntax Settings' })
-		for (let key of Object.keys(plugin.settings["Syntax"])) {
-			new Setting(syntax_settings)
-				.setName(key)
-				.addText(
-					text => text.setValue(plugin.settings["Syntax"][key])
+
+		let regex_settings = containerEl.createEl('h3', { text: 'Regex Patterns' })
+		containerEl.createEl('p', {
+			text: 'Advanced users can customize the full regex patterns used for note parsing. Use with caution - invalid regex patterns will break the plugin functionality.',
+			cls: 'setting-item-description'
+		})
+
+		for (let key of Object.keys(plugin.settings["RegexPatterns"])) {
+			new Setting(regex_settings)
+				.setName(`${key} Pattern`)
+				.addTextArea(
+					text => text.setValue(plugin.settings["RegexPatterns"][key])
 						.onChange((value) => {
-							plugin.settings["Syntax"][key] = value
+							plugin.settings["RegexPatterns"][key] = value
 							plugin.saveAllData()
 						})
+
 				)
 		}
 	}
@@ -453,7 +460,7 @@ export class SettingsTab extends PluginSettingTab {
 		containerEl.createEl('a', { text: 'For more information check the wiki', href: "https://github.com/Pseudonium/Obsidian_to_Anki/wiki" })
 		this.setup_note_table()
 		this.setup_folder_table()
-		this.setup_syntax()
+		this.setup_regex_patterns()
 		this.setup_defaults()
 		this.setup_buttons()
 		this.setup_ignore_files()

@@ -1,8 +1,6 @@
 import { PluginSettings, ParsedSettings } from './interfaces/settings-interface'
 import { App } from 'obsidian'
 import * as AnkiConnect from './anki'
-import { ID_REGEXP_STR } from './note'
-import { escapeRegex } from './constants'
 
 export async function settingToData(app: App, settings: PluginSettings, fields_dict: Record<string, string[]>): Promise<ParsedSettings> {
     let result: ParsedSettings = <ParsedSettings>{}
@@ -25,15 +23,15 @@ export async function settingToData(app: App, settings: PluginSettings, fields_d
         },
         tags: [settings.Defaults.Tag]
     }
-    result.EXISTING_IDS = await AnkiConnect.invoke('findNotes', {query: ""}) as number[]
+    result.EXISTING_IDS = await AnkiConnect.invoke('findNotes', { query: "" }) as number[]
 
     //RegExp section
-    result.FROZEN_REGEXP = new RegExp(escapeRegex(settings.Syntax["Frozen Fields Line"]) + String.raw` - (.*?):\n((?:[^\n][\n]?)+)`, "g")
-    result.DECK_REGEXP = new RegExp(String.raw`^` + escapeRegex(settings.Syntax["Target Deck Line"]) + String.raw`(?:\n|: )(.*)`, "m")
-    result.TAG_REGEXP = new RegExp(String.raw`^` + escapeRegex(settings.Syntax["File Tags Line"]) + String.raw`(?:\n|: )(.*)`, "m")
-    result.NOTE_REGEXP = new RegExp(String.raw`^` + escapeRegex(settings.Syntax["Begin Note"]) + String.raw`\n([\s\S]*?\n)` + escapeRegex(settings.Syntax["End Note"]), "gm")
-    result.INLINE_REGEXP = new RegExp(escapeRegex(settings.Syntax["Begin Inline Note"]) + String.raw`(.*?)` + escapeRegex(settings.Syntax["End Inline Note"]), "g")
-    result.EMPTY_REGEXP = new RegExp(escapeRegex(settings.Syntax["Delete Note Line"]) + ID_REGEXP_STR, "g")
+    result.FROZEN_REGEXP = new RegExp(settings.RegexPatterns["Frozen Fields"], "g")
+    result.DECK_REGEXP = new RegExp(settings.RegexPatterns["Target Deck"], "m")
+    result.TAG_REGEXP = new RegExp(settings.RegexPatterns["File Tags"], "m")
+    result.NOTE_REGEXP = new RegExp(settings.RegexPatterns["Note"], "gm")
+    result.INLINE_REGEXP = new RegExp(settings.RegexPatterns["Inline Note"], "g")
+    result.EMPTY_REGEXP = new RegExp(settings.RegexPatterns["Delete Note"], "g")
 
     //Just a simple transfer
     result.folder_as_deck = settings.Defaults["Folder as Deck"]

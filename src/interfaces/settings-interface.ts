@@ -17,6 +17,14 @@ export interface PluginSettings {
 		"Delete Note Line": string,
 		"Frozen Fields Line": string
 	},
+	RegexPatterns: {
+		"Frozen Fields": string,
+		"Target Deck": string,
+		"File Tags": string,
+		"Note": string,
+		"Inline Note": string,
+		"Delete Note": string
+	},
 	Defaults: {
 		"Folder as Deck": boolean,
 		"Scan Directory": string,
@@ -31,7 +39,7 @@ export interface PluginSettings {
 		"Add Obsidian Tags": boolean,
 		"Add File Tags to Card": boolean
 	},
-	IGNORED_FILE_GLOBS:string[]
+	IGNORED_FILE_GLOBS: string[]
 }
 
 export interface FileData {

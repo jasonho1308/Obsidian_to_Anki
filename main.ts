@@ -31,6 +31,14 @@ export default class MyPlugin extends Plugin {
 				"Delete Note Line": "DELETE",
 				"Frozen Fields Line": "FROZEN"
 			},
+			RegexPatterns: {
+				"Frozen Fields": "FROZEN - (.*?):\n((?:[^\n][\n]?)+)",
+				"Target Deck": "^TARGET DECK(?:\n|: )(.*)",
+				"File Tags": "^FILE TAGS(?:\n|: )(.*)",
+				"Note": "^START\n([\s\S]*?\n)END",
+				"Inline Note": "STARTI(.*?)ENDI",
+				"Delete Note": "DELETE\n?(?:<!--)?(?:ID: (\d+).*)"
+			},
 			Defaults: {
 				"Folder as Deck": true,
 				"Scan Directory": "",
@@ -53,7 +61,7 @@ export default class MyPlugin extends Plugin {
 		for (let note_type of this.note_types) {
 			settings["CUSTOM_REGEXPS"][note_type] = ""
 			const field_names: string[] = await AnkiConnect.invoke(
-				'modelFieldNames', {modelName: note_type}
+				'modelFieldNames', { modelName: note_type }
 			) as string[]
 			this.fields_dict[note_type] = field_names
 			settings["FILE_LINK_FIELDS"][note_type] = field_names[0]
@@ -65,7 +73,7 @@ export default class MyPlugin extends Plugin {
 		let fields_dict = {}
 		for (let note_type of this.note_types) {
 			const field_names: string[] = await AnkiConnect.invoke(
-				'modelFieldNames', {modelName: note_type}
+				'modelFieldNames', { modelName: note_type }
 			) as string[]
 			fields_dict[note_type] = field_names
 		}
@@ -100,7 +108,17 @@ export default class MyPlugin extends Plugin {
 			new Notice("Default settings successfully generated!")
 			return default_sets
 		} else {
-			return current_data.settings
+			let settings = current_data.settings
+			// Migration: Add RegexPatterns if it doesn't exist
+			if (!settings.hasOwnProperty("RegexPatterns")) {
+				settings.RegexPatterns = (await this.getDefaultSettings()).RegexPatterns
+				this.saveData(current_data)
+			}
+			if (!settings.hasOwnProperty("Syntax")) {
+				delete settings.Syntax
+				this.saveData(current_data)
+			}
+			return settings
 		}
 	}
 
@@ -136,12 +154,12 @@ export default class MyPlugin extends Plugin {
 
 	async saveAllData(): Promise<void> {
 		this.saveData(
-				{
-					settings: this.settings,
-					"Added Media": this.added_media,
-					"File Hashes": this.file_hashes,
-					fields_dict: this.fields_dict
-				}
+			{
+				settings: this.settings,
+				"Added Media": this.added_media,
+				"File Hashes": this.file_hashes,
+				fields_dict: this.fields_dict
+			}
 		)
 	}
 
@@ -191,7 +209,7 @@ export default class MyPlugin extends Plugin {
 		try {
 			await AnkiConnect.invoke('modelNames')
 		}
-		catch(e) {
+		catch (e) {
 			new Notice("Error, couldn't connect to Anki! Check console for error message.")
 			return
 		}
@@ -212,7 +230,7 @@ export default class MyPlugin extends Plugin {
 		} else {
 			manager = new FileManager(this.app, data, this.app.vault.getMarkdownFiles(), this.file_hashes, this.added_media);
 		}
-		
+
 		await manager.initialiseFiles()
 		await manager.requests_1()
 		this.added_media = Array.from(manager.added_media_set)
@@ -231,7 +249,7 @@ export default class MyPlugin extends Plugin {
 		try {
 			this.settings = await this.loadSettings()
 		}
-		catch(e) {
+		catch (e) {
 			new Notice("Couldn't connect to Anki! Check console for error message.")
 			return
 		}
@@ -244,7 +262,7 @@ export default class MyPlugin extends Plugin {
 				this.fields_dict = await this.generateFieldsDict()
 				new Notice("Fields dictionary successfully generated!")
 			}
-			catch(e) {
+			catch (e) {
 				new Notice("Couldn't connect to Anki! Check console for error message.")
 				return
 			}
@@ -262,8 +280,8 @@ export default class MyPlugin extends Plugin {
 			id: 'anki-scan-vault',
 			name: 'Scan Vault',
 			callback: async () => {
-			 	await this.scanVault()
-			 }
+				await this.scanVault()
+			}
 		})
 	}
 
