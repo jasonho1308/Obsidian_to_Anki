@@ -66,12 +66,12 @@ RUN chmod +x ./anki.tar.zst && \
     chmod +x ./install.sh && \
     ./install.sh
 
-ENV LC_ALL en_US.UTF-8
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US.UTF-8 
+ENV LC_ALL=en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US.UTF-8
 
 RUN update-locale LANG=en_US.UTF-8
-ENV QT_DEBUG_PLUGINS 1
+ENV QT_DEBUG_PLUGINS=1
 # ENV XMODIFIERS @im=fcitx
 # ENV XMODIFIERS @im=ibus
 # CMD /bin/bash -c "(/usr/bin/ibus-daemon -xd; /usr/bin/anki;)"
@@ -86,7 +86,6 @@ RUN \
     echo "**** download obsidian ****" && \
     curl \
     https://github.com/obsidianmd/obsidian-releases/releases/download/v$OBSIDIAN_VERSION/Obsidian-$OBSIDIAN_VERSION.AppImage \
-    -L \
     -o ./obsidian.AppImage
 
 RUN \
